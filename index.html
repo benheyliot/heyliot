@@ -60,7 +60,7 @@
         photo.setAttribute('src', data);
 
         if (navigator.onLine) {
-          fetch("https://script.google.com/macros/s/AKfycbzCH4Nk0SUEwEu1AHl39gzVUqwfzjotiGwQCOzH_lt39fQugipP8pEh_OubzC7TQ5g7wg/exec", {
+          fetch("https://script.google.com/macros/s/AKfycbzoII3KJ4RpyShvGOsYR6T5hiX8XPxOmnbQmPduIpRFoN1ioomhBWCX7sAWUx3AQ_pV/exec", {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
@@ -85,7 +85,7 @@
       window.addEventListener('online', () => {
         let savedPhoto = localStorage.getItem('capturedPhoto');
         if (savedPhoto) {
-          fetch("https://script.google.com/macros/s/AKfycbzCH4Nk0SUEwEu1AHl39gzVUqwfzjotiGwQCOzH_lt39fQugipP8pEh_OubzC7TQ5g7wg/exec", {
+          fetch("https://script.google.com/macros/s/AKfycbzoII3KJ4RpyShvGOsYR6T5hiX8XPxOmnbQmPduIpRFoN1ioomhBWCX7sAWUx3AQ_pV/exec", {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
