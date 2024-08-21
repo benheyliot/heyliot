@@ -60,27 +60,46 @@
         photo.setAttribute('src', data);
 
         if (navigator.onLine) {
-          google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).saveToSheet(data);
+          fetch("YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ imageData: data })
+          })
+          .then(response => response.json())
+          .then(data => {
+            alert("Photo enregistrée avec succès.");
+            localStorage.removeItem('capturedPhoto');
+          })
+          .catch(error => {
+            console.error("Erreur lors de l'enregistrement de la photo:", error.message);
+          });
         } else {
           localStorage.setItem('capturedPhoto', data);
           alert('Photo enregistrée localement. Elle sera envoyée une fois la connexion rétablie.');
         }
       });
 
-      function onSuccess() {
-        alert("Photo enregistrée avec succès.");
-        localStorage.removeItem('capturedPhoto');
-      }
-
-      function onFailure(error) {
-        alert("Erreur lors de l'enregistrement de la photo: " + error.message);
-      }
-
       // Check for any photos saved while offline and try to send them when online.
       window.addEventListener('online', () => {
         let savedPhoto = localStorage.getItem('capturedPhoto');
         if (savedPhoto) {
-          google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).saveToSheet(savedPhoto);
+          fetch("YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ imageData: savedPhoto })
+          })
+          .then(response => response.json())
+          .then(data => {
+            alert("Photo enregistrée avec succès.");
+            localStorage.removeItem('capturedPhoto');
+          })
+          .catch(error => {
+            console.error("Erreur lors de l'enregistrement de la photo:", error.message);
+          });
         }
       });
 
@@ -89,7 +108,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('/service-worker.js.gs').then(function (registration) {
+        navigator.serviceWorker.register('service-worker.js').then(function (registration) {  // Note the relative path
           console.log('ServiceWorker registration successful with scope: ', registration.scope);
         }, function (err) {
           console.log('ServiceWorker registration failed: ', err);
@@ -99,32 +118,3 @@
   </script>
 </body>
 </html>
-```
-
-### Nom du fichier : service-worker.js
-
-```javascript
-const CACHE_NAME = 'photo-app-cache';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/service-worker.js'
-];
-
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
-  );
-});
-
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        return response || fetch(event.request);
-      })
-  );
-});
