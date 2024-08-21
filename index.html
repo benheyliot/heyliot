@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <title>Capturer une Photo et Envoyer à Google Sheets</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    video {
+      width: 100%;
+      border: 1px solid #ccc;
+      transform: rotateY(180deg); /* assure que l'image n'est pas inversée */
+    }
+    canvas {
+      display: none;
+    }
+    button {
+      padding: 10px 15px;
+      margin-top: 20px;
+      font-size: 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    img {
+      margin-top: 20px;
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Capturer une Photo</h1>
+  <video id="video" autoplay playsinline><!-- ajout de playsinline pour mobiles --></video>
+  <button id="startbutton">Prendre Photo</button>
+  <canvas id="canvas"></canvas>
+  <img id="photo" alt="Votre photo apparaîtra ici.">
+  <script>
+    (async () => {
+      let video = document.getElementById('video');
+      let canvas = document.getElementById('canvas');
+      let photo = document.getElementById('photo');
+      let startbutton = document.getElementById('startbutton');
+      
+      try {
+        let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Erreur: Impossible d\'accéder à la caméra. Vérifiez les permissions.');
+        console.error(err);
+      }
+      
+      startbutton.addEventListener('click', () => {
+        let context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        let data = canvas.toDataURL('image/png');
+        photo.setAttribute('src', data);
+
+        if (navigator.onLine) {
+          google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).saveToSheet(data);
+        } else {
+          localStorage.setItem('capturedPhoto', data);
+          alert('Photo enregistrée localement. Elle sera envoyée une fois la connexion rétablie.');
+        }
+      });
+
+      function onSuccess() {
+        alert("Photo enregistrée avec succès.");
+        localStorage.removeItem('capturedPhoto');
+      }
+
+      function onFailure(error) {
+        alert("Erreur lors de l'enregistrement de la photo: " + error.message);
+      }
+
+      // Check for any photos saved while offline and try to send them when online.
+      window.addEventListener('online', () => {
+        let savedPhoto = localStorage.getItem('capturedPhoto');
+        if (savedPhoto) {
+          google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFailure).saveToSheet(savedPhoto);
+        }
+      });
+
+    })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/service-worker.js.gs').then(function (registration) {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }, function (err) {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
+```
+
+### Nom du fichier : service-worker.js
+
+```javascript
+const CACHE_NAME = 'photo-app-cache';
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/service-worker.js'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        return response || fetch(event.request);
+      })
+  );
+});
