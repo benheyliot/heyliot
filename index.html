@@ -11,7 +11,7 @@
     video {
       width: 100%;
       border: 1px solid #ccc;
-      transform: rotateY(180deg); /* assure que l'image n'est pas inversée */
+      transform: scaleX(-1); /* assure que l'image n'est pas inversée */
     }
     canvas {
       display: none;
@@ -34,7 +34,7 @@
 </head>
 <body>
   <h1>Capturer une Photo</h1>
-  <video id="video" autoplay playsinline><!-- ajout de playsinline pour mobiles --></video>
+  <video id="video" autoplay playsinline></video>
   <button id="startbutton">Prendre Photo</button>
   <canvas id="canvas"></canvas>
   <img id="photo" alt="Votre photo apparaîtra ici.">
@@ -46,13 +46,13 @@
       let startbutton = document.getElementById('startbutton');
       
       try {
-        let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         video.srcObject = stream;
       } catch (err) {
         alert('Erreur: Impossible d\'accéder à la caméra. Vérifiez les permissions.');
         console.error(err);
       }
-      
+
       startbutton.addEventListener('click', () => {
         let context = canvas.getContext('2d');
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
