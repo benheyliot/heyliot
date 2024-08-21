@@ -3,14 +3,40 @@
 <head>
   <title>Capturer une Photo et Envoyer à Google Sheets</title>
   <style>
-    /* CSS pour styliser la page */
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    video {
+      width: 100%;
+      border: 1px solid #ccc;
+      transform: scaleX(-1); /* assure que l'image n'est pas inversée */
+    }
+    canvas {
+      display: none;
+    }
+    button {
+      padding: 10px 15px;
+      margin-top: 20px;
+      font-size: 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    img {
+      margin-top: 20px;
+      max-width: 100%;
+    }
   </style>
 </head>
 <body>
   <h1>Capturer une Photo</h1>
   <video id="video" autoplay playsinline></video>
   <button id="startbutton">Prendre Photo</button>
-  <canvas id="canvas"></canvas>
+  <canvas id="canvas" width="640" height="480"></canvas>
   <img id="photo" alt="Votre photo apparaîtra ici.">
   <script>
     (async () => {
@@ -29,12 +55,13 @@
 
       startbutton.addEventListener('click', () => {
         let context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         let data = canvas.toDataURL('image/png');
         photo.setAttribute('src', data);
 
         if (navigator.onLine) {
-          fetch("https://script.google.com/macros/s/AKfycbzoII3KJ4RpyShvGOsYR6T5hiX8XPxOmnbQmPduIpRFoN1ioomhBWCX7sAWUx3AQ_pV/exec", {
+          fetch("https://script.google.com/macros/s/AKfycbxWBKWOz7AIIQi8iIvzp64C5CUmCA8ViO_EyoNcltEl_CBC-CNVSTW_RxM5McPm6qA1Sg/exec", {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
@@ -55,11 +82,11 @@
         }
       });
 
-      // Tentative d'envoi des photos sauvegardées localement lorsque l'utilisateur se reconnecte à Internet.
+      // Check for any photos saved while offline and try to send them when online.
       window.addEventListener('online', () => {
         let savedPhoto = localStorage.getItem('capturedPhoto');
         if (savedPhoto) {
-          fetch("https://script.google.com/macros/s/AKfycbzoII3KJ4RpyShvGOsYR6T5hiX8XPxOmnbQmPduIpRFoN1ioomhBWCX7sAWUx3AQ_pV/exec", {
+          fetch("https://script.google.com/macros/s/AKfycbxWBKWOz7AIIQi8iIvzp64C5CUmCA8ViO_EyoNcltEl_CBC-CNVSTW_RxM5McPm6qA1Sg/exec", {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
@@ -78,6 +105,17 @@
       });
 
     })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('service-worker.js').then(function (registration) {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }, function (err) {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      });
+    }
   </script>
 </body>
 </html>
