@@ -1,8 +1,8 @@
 const CACHE_NAME = 'photo-app-cache';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/service-worker.js'
+  '/heyliot/',  // Adjust if needed based on the actual path
+  '/heyliot/index.html',
+  '/heyliot/service-worker.js'
 ];
 
 self.addEventListener('install', event => {
