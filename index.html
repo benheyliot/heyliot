@@ -1,130 +1,66 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <title>Capturer une Photo et Envoyer à Google Sheets</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    video {
-      width: 100%;
-      border: 1px solid #ccc;
-      transform: scaleX(-1); 
-    }
-    canvas {
-      display: none;
-    }
-    button {
-      padding: 10px 15px;
-      margin-top: 20px;
-      font-size: 16px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    img {
-      margin-top: 20px;
-      max-width: 100%;
-    }
-  </style>
-</head>
-<body>
-  <h1>Capturer une Photo</h1>
-  <video id="video" autoplay playsinline></video>
-  <button id="startbutton">Prendre Photo</button>
-  <canvas id="canvas" width="640" height="480"></canvas>
-  <img id="photo" alt="Votre photo apparaîtra ici.">
-  <script>
-    (async () => {
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      const photo = document.getElementById('photo');
-      const startbutton = document.getElementById('startbutton');
-      const scriptUrl = "https://script.google.com/macros/s/AKfycbzR1eGyeAKb_VAif1Zg3vMIfELJBZJE7ZLntOIQi9KTNJdEb4zhwyuVEJ33qpZLsGZSeQ/exec";
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-        video.srcObject = stream;
-      } catch (err) {
-        alert('Erreur: Impossible d\'accéder à la caméra. Vérifiez les permissions.');
-        console.error(err);
-      }
-
-      startbutton.addEventListener('click', () => {
-        const context = canvas.getContext('2d');
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const data = canvas.toDataURL('image/png');
-        photo.setAttribute('src', data);
-
-        if (navigator.onLine) {
-          fetch(scriptUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ imageData: data })
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.status === 'success') {
-              alert("Photo enregistrée avec succès sur Google Drive.");
-              localStorage.removeItem('capturedPhoto');
-            } else {
-              alert(`Erreur: ${data.message}`);
-            }
-          })
-          .catch(error => {
-            console.error("Erreur lors de l'enregistrement de la photo:", error.message);
-          });
-        } else {
-          localStorage.setItem('capturedPhoto', data);
-          alert('Photo enregistrée localement. Elle sera envoyée une fois la connexion rétablie.');
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="./resources/ol.css">
+        <link rel="stylesheet" href="resources/fontawesome-all.min.css">
+        <link rel="stylesheet" href="./resources/ol-layerswitcher.css">
+        <link rel="stylesheet" href="./resources/qgis2web.css">
+        <style>
+        html, body {
+            background-color: #ffffff;
         }
-      });
-
-      // Check for any photos saved while offline and try to send them when online.
-      window.addEventListener('online', () => {
-        const savedPhoto = localStorage.getItem('capturedPhoto');
-        if (savedPhoto) {
-          fetch(scriptUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ imageData: savedPhoto })
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.status === 'success') {
-              alert("Photo enregistrée avec succès sur Google Drive.");
-              localStorage.removeItem('capturedPhoto');
-            } else {
-              alert(`Erreur: ${data.message}`);
-            }
-          })
-          .catch(error => {
-            console.error("Erreur lors de l'enregistrement de la photo:", error.message);
-          });
+        .ol-control > * {
+            background-color: #f8f8f8!important;
+            color: #444444!important;
+            border-radius: 0px;
         }
-      });
+        .ol-attribution a, .gcd-gl-input::placeholder, .search-layer-input-search::placeholder {
+            color: #444444!important;
+        }
+        .search-layer-input-search {
+            background-color: #f8f8f8!important;
+        }
+        .ol-control > *:focus, .ol-control >*:hover {
+            background-color: rgba(248, 248, 248, 0.7)!important;
+        } 
+        .ol-control {
+            background-color: rgba(255,255,255,.4) !important;
+            padding: 2px !important;
+        } 
+        </style>
 
-    })();
-  </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('service-worker.js').then(function (registration) {
-          console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }, function (err) {
-          console.log('ServiceWorker registration failed: ', err);
-        });
-      });
-    }
-  </script>
-</body>
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+            <div id="popup" class="ol-popup">
+                <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+                <div id="popup-content"></div>
+            </div>
+        </div>
+        <script src="resources/qgis2web_expressions.js"></script>
+<script src="resources/proj4.js"></script>
+        <script>proj4.defs('EPSG:3857','+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs');</script>
+        <script src="./resources/functions.js"></script>
+        <script src="./resources/ol.js"></script>
+        <script src="./resources/ol-layerswitcher.js"></script>
+        <script src="layers/1009103435_Survey_Hte_Maurienne_Oct24V3_3.js"></script><script src="layers/1009103435_Survey_Hte_Maurienne_Oct24V3_4.js"></script><script src="layers/PAVs_mauriennebrutALL_6.js"></script><script src="layers/georeffranceepci_7.js"></script>
+        <script src="styles/1009103435_Survey_Hte_Maurienne_Oct24V3_3_style.js"></script><script src="styles/1009103435_Survey_Hte_Maurienne_Oct24V3_4_style.js"></script><script src="styles/PAVs_mauriennebrutALL_6_style.js"></script><script src="styles/georeffranceepci_7_style.js"></script>
+        <script src="./layers/layers.js" type="text/javascript"></script> 
+        <script src="./resources/Autolinker.min.js"></script>
+        <script src="./resources/qgis2web.js"></script>
+    </body>
 </html>
